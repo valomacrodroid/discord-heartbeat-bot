@@ -1,11 +1,13 @@
 import os
 import discord
-from discord.ext import commands, tasks
+from discord.ext import tasks
 import platform
 import psutil
 import time
+import random
+import asyncio
 
-VERSION = "Miyuki Bot v2.3"
+VERSION = "Miyuki Bot v2.4"
 OWNER_ID = 586431935165759491
 start_time = time.time()
 
@@ -13,57 +15,101 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = 1378040995102588989
 
 intents = discord.Intents.default()
-bot = commands.Bot(command_prefix="/", intents=intents)
+intents.members = True  # fontos!
 
-# Lista a státuszokhoz
+bot = discord.Client(intents=intents)
+tree = discord.app_commands.CommandTree(bot)
+
 status_list = [
     discord.Game(name="Maybe Im Back?"),
     discord.Activity(type=discord.ActivityType.listening, name="Miyuki back 😍"),
     discord.Activity(type=discord.ActivityType.watching, name="Miyuki welcome 🥰🥰❤️"),
 ]
+current_status = 0
 
-current_status = 0  # Index a status_list-ben
+active_ping_tasks = {}
+active_timer_tasks = {}
 
 @bot.event
 async def on_ready():
     print(f"Bejelentkezve: {bot.user}")
     send_heartbeat.start()
     cycle_status.start()
+    await tree.sync()  # szinkronizálja a slash parancsokat
 
-@bot.slash_command(name="info", description="Információk a Miyuki botról")
-async def info(ctx):
-    if ctx.author.id != OWNER_ID:
-        await ctx.respond("Ezt a parancsot csak Mizuki használhatja. 🚫", ephemeral=True)
+@tree.command(name="info", description="Információk a Miyuki botról")
+async def info(interaction: discord.Interaction):
+    if interaction.user.id != OWNER_ID:
+        await interaction.response.send_message("Ezt a parancsot csak Mizuki használhatja. 🚫", ephemeral=True)
         return
 
-    # Uptime kiszámítása
     uptime_seconds = int(time.time() - start_time)
     uptime_string = f"{uptime_seconds // 3600}h {(uptime_seconds % 3600) // 60}m {uptime_seconds % 60}s"
-
-    # Memória és CPU
     process = psutil.Process()
     mem_mb = process.memory_info().rss / 1024 / 1024
     cpu_percent = process.cpu_percent(interval=0.1)
 
-    # Embed létrehozás
     embed = discord.Embed(
         title="🤖 Miyuki Bot Információk",
-        description=f"{VERSION}",
+        description=VERSION,
         color=discord.Color.blue()
     )
     embed.add_field(name="🕒 Uptime", value=uptime_string, inline=True)
     embed.add_field(name="💻 Python verzió", value=platform.python_version(), inline=True)
     embed.add_field(name="🖥️ Memóriahasználat", value=f"{mem_mb:.2f} MB", inline=True)
     embed.add_field(name="⚙️ CPU kihasználtság", value=f"{cpu_percent:.1f} %", inline=True)
-    embed.add_field(name="📡 Szerver neve", value=ctx.guild.name if ctx.guild else "Privát üzenet", inline=True)
+    embed.add_field(name="📡 Szerver neve", value=interaction.guild.name if interaction.guild else "Privát üzenet", inline=True)
     embed.add_field(name="👥 Felhasználók száma", value=str(sum(g.member_count for g in bot.guilds)), inline=True)
     embed.set_footer(text="Csak Miyuki számára elérhető parancs.")
+    await interaction.response.send_message(embed=embed)
 
-    await ctx.respond(embed=embed)
+@tree.command(name="ping", description="Pong vissza!")
+async def ping(interaction: discord.Interaction):
+    await interaction.response.send_message("Pong!")
 
-@bot.slash_command(name="ping", description="Pong vissza!")
-async def ping(ctx):
-    await ctx.respond("Pong!")
+@tree.command(name="whoami", description="Megmutatja, ki vagy (viccesen).")
+async def whoami(interaction: discord.Interaction):
+    user = interaction.user
+    funny_messages = [
+        f"Lássuk csak, ki is vagy te, {user.display_name}... 🧐",
+        f"A nagy Mizuki vizsgálja a kiléted, {user.mention}! 🔍",
+        f"Kíváncsi vagy magadra, {user.display_name}? Íme az aktád: 📂",
+        f"Nyisd ki a dossziét... {user.display_name}, te következel! 🗃️",
+    ]
+
+    embed = discord.Embed(title="🆔 Whoami eredmény", color=discord.Color.purple())
+    embed.add_field(name="Név", value=f"{user.display_name} ({user.name}#{user.discriminator})", inline=False)
+    embed.add_field(name="User ID", value=user.id, inline=False)
+    embed.set_thumbnail(url=user.avatar.url if user.avatar else user.default_avatar.url)
+    embed.add_field(name="Fiók létrehozva", value=user.created_at.strftime("%Y-%m-%d %H:%M:%S"), inline=False)
+    await interaction.response.send_message(random.choice(funny_messages), embed=embed)
+
+@tree.command(name="pingme", description="Pingel X perc múlva (max 120 perc).")
+@discord.app_commands.describe(minutes="Hány perc múlva pingeljen?")
+async def pingme(interaction: discord.Interaction, minutes: int):
+    if minutes <= 0 or minutes > 120:
+        await interaction.response.send_message("⛔ Csak 1 és 120 perc közötti időt adhatsz meg!", ephemeral=True)
+        return
+
+    if interaction.user.id in active_ping_tasks:
+        active_ping_tasks[interaction.user.id].cancel()
+
+    async def ping_task():
+        try:
+            await asyncio.sleep(minutes * 60)
+            funny_pings = [
+                f"⏰ Ahogy kérted, itt a pinged, {interaction.user.mention}! Mizuki sosem felejt. 😉",
+                f"⌛ Idő letelt! Itt vagyok, {interaction.user.mention}! 🛎️",
+                f"🔔 DING DING! {interaction.user.mention}, itt az idő! Mizuki stílusban természetesen.",
+            ]
+            await interaction.followup.send(random.choice(funny_pings))
+        except asyncio.CancelledError:
+            pass
+
+    task = asyncio.create_task(ping_task())
+    active_ping_tasks[interaction.user.id] = task
+
+    await interaction.response.send_message(f"✅ Oké {interaction.user.display_name}, {minutes} perc múlva pingellek!")
 
 @tasks.loop(hours=1)
 async def send_heartbeat():
