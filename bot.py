@@ -1,5 +1,7 @@
 import os
+import os
 import discord
+from discord import app_commands  # így importáld explicit az app_commands-ot
 from discord.ext import tasks
 import platform
 import psutil
@@ -151,6 +153,9 @@ async def cycle_status():
     global current_status
     await bot.change_presence(activity=status_list[current_status])
     current_status = (current_status + 1) % len(status_list)
+
+bot = discord.Client(intents=intents)
+tree = app_commands.CommandTree(bot)  # így használd
 
 if __name__ == "__main__":
     bot.run(TOKEN)
