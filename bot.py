@@ -3,6 +3,7 @@ import asyncio
 import discord
 from discord import Intents, Client
 
+# A token a környezeti változóból jön
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 intents = Intents.default()
@@ -15,4 +16,6 @@ async def on_ready():
     await client.close()
 
 if __name__ == "__main__":
+    if not TOKEN:
+        raise ValueError("DISCORD_TOKEN environment variable not set!")
     client.run(TOKEN)
