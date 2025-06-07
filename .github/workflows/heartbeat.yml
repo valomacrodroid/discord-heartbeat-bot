@@ -20,7 +20,9 @@ jobs:
           python-version: 3.11
 
       - name: Install dependencies
-        run: pip install discord.py
+        run: |
+          pip install --upgrade pip
+          pip install py-cord
 
       - name: Run heartbeat bot
         env:
