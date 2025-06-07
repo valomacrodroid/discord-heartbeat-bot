@@ -1,21 +1,19 @@
 import os
-import asyncio
 import discord
-from discord import Intents, Client
+from discord.ext import commands
 
-# A token a környezeti változóból jön
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-intents = Intents.default()
-client = Client(intents=intents)
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix="/", intents=intents)
 
-@client.event
+@bot.event
 async def on_ready():
-    print(f"Logged in as {client.user}")
-    await asyncio.sleep(5)
-    await client.close()
+    print(f"Bejelentkezve: {bot.user}")
+
+@bot.slash_command(name="ping", description="Pong vissza!")
+async def ping(ctx):
+    await ctx.respond("Pong!")
 
 if __name__ == "__main__":
-    if not TOKEN:
-        raise ValueError("DISCORD_TOKEN environment variable not set!")
-    client.run(TOKEN)
+    bot.run(TOKEN)
