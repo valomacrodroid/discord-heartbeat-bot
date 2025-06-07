@@ -1,6 +1,6 @@
 import os
 import discord
-import discord.app_commands as app_commands
+from discord import app_commands
 from discord.ext import tasks
 import platform
 import psutil
@@ -19,7 +19,7 @@ intents = discord.Intents.default()
 intents.members = True
 
 bot = discord.Client(intents=intents)
-tree = discord.app_commands.CommandTree(bot)
+tree = app_commands.CommandTree(bot)
 
 status_list = [
     discord.Game(name="Maybe Im Back?"),
@@ -27,13 +27,11 @@ status_list = [
     discord.Activity(type=discord.ActivityType.watching, name="Miyuki welcome 🥰🥰❤️"),
 ]
 current_status = 0
-
 active_ping_tasks = {}
 
 @bot.event
 async def on_ready():
     print(f"Bejelentkezve: {bot.user}")
-
     send_heartbeat.start()
     cycle_status.start()
     await tree.sync()
@@ -86,7 +84,7 @@ async def whoami(interaction: discord.Interaction):
     await interaction.response.send_message(random.choice(funny_messages), embed=embed)
 
 @tree.command(name="pingme", description="Pingel X perc múlva (max 120 perc).")
-@discord.app_commands.describe(minutes="Hány perc múlva pingeljen?")
+@app_commands.describe(minutes="Hány perc múlva pingeljen?")
 async def pingme(interaction: discord.Interaction, minutes: int):
     if minutes <= 0 or minutes > 120:
         await interaction.response.send_message("⛔ Csak 1 és 120 perc közötti időt adhatsz meg!", ephemeral=True)
