@@ -1,0 +1,26 @@
+name: Monthly Discord Heartbeat
+
+on:
+  schedule:
+    - cron: '0 0 8 * *'
+    - cron: '0 0 26 * *'
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: pip install discord.py
+
+      - name: Run heartbeat bot
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        run: python bot.py
