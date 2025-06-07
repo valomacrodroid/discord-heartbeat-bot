@@ -21,14 +21,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install py-cord psutil
+          pip install -U py-cord
+          pip install psutil
 
       - name: Run heartbeat bot
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
         run: python bot.py
-
-        - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -U py-cord
