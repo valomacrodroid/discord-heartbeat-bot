@@ -1,9 +1,12 @@
 import os
 import asyncio
-from discord import Client
+import discord
+from discord import Intents, Client
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-client = Client()
+
+intents = Intents.default()
+client = Client(intents=intents)
 
 @client.event
 async def on_ready():
