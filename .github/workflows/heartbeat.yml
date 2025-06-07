@@ -3,6 +3,7 @@ name: Daily Discord Heartbeat
 on:
   schedule:
     - cron: '0 10 * * *'  # Minden nap 10:00-kor indul
+    - cron: '0 15 * * *'  # Minden nap 15:00-kor leállítást is triggerelheted, ha akarsz (opcionális)
   workflow_dispatch:      # Manuális indítás engedélyezése
 
 jobs:
@@ -21,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -U py-cord
+          pip install py-cord==2.4.1
           pip install psutil
 
       - name: Run heartbeat bot
