@@ -1,10 +1,9 @@
-name: Monthly Discord Heartbeat
+name: Daily Discord Heartbeat
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '0 0 8 * *'
-    - cron: '0 0 26 * *'
+    - cron: '0 10 * * *'  # Minden nap 10:00-kor indul
+  workflow_dispatch:      # Manuális indítás engedélyezése
 
 jobs:
   heartbeat:
