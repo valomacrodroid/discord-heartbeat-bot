@@ -2,8 +2,7 @@ name: Daily Discord Heartbeat
 
 on:
   schedule:
-    - cron: '0 10 * * *'  # Minden nap 10:00-kor indul
-    - cron: '0 15 * * *'  # Minden nap 15:00-kor leállítást is triggerelheted, ha akarsz (opcionális)
+    - cron: '0 10 * * *'  # Minden nap 10:00-kor indul (UTC idő! pl. 12:00 CEST)
   workflow_dispatch:      # Manuális indítás engedélyezése
 
 jobs:
