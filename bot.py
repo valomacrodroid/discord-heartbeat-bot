@@ -1,14 +1,12 @@
 import os
-import os
 import discord
-from discord import app_commands  # így importáld explicit az app_commands-ot
+import discord.app_commands as app_commands
 from discord.ext import tasks
 import platform
 import psutil
 import time
 import random
 import asyncio
-from datetime import datetime, time as dt_time
 
 VERSION = "Miyuki Bot v2.4"
 OWNER_ID = 586431935165759491
@@ -18,7 +16,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = 1378040995102588989
 
 intents = discord.Intents.default()
-intents.members = True  # fontos!
+intents.members = True
 
 bot = discord.Client(intents=intents)
 tree = discord.app_commands.CommandTree(bot)
@@ -31,40 +29,14 @@ status_list = [
 current_status = 0
 
 active_ping_tasks = {}
-active_timer_tasks = {}
-
-# --- Segédfüggvény az idő ellenőrzésére ---
-def is_within_active_hours():
-    now = datetime.now().time()
-    start = dt_time(10, 0)  # 10:00
-    end = dt_time(15, 0)    # 15:00
-    return start <= now < end
-
-# --- Feladat, ami figyeli az aktív időszakot, és leállítja a botot ha kilép az időablakból ---
-async def monitor_active_hours():
-    while True:
-        if not is_within_active_hours():
-            print("Kívül vagyunk az aktív időablakon (10:00-15:00), leállítom a botot.")
-            await bot.close()
-            break
-        await asyncio.sleep(60)  # minden percben ellenőrzünk
 
 @bot.event
 async def on_ready():
     print(f"Bejelentkezve: {bot.user}")
 
-    # Ha most nem az aktív időszakban vagyunk, akkor leállunk azonnal
-    if not is_within_active_hours():
-        print("Nem az aktív időszakban indult a bot, leállítom.")
-        await bot.close()
-        return
-
     send_heartbeat.start()
     cycle_status.start()
-    asyncio.create_task(monitor_active_hours())  # Indítjuk az időfigyelést
-    await tree.sync()  # szinkronizálja a slash parancsokat
-
-# --- Parancsok és egyéb funkciók ugyanazok, változatlanul ---
+    await tree.sync()
 
 @tree.command(name="info", description="Információk a Miyuki botról")
 async def info(interaction: discord.Interaction):
@@ -153,9 +125,6 @@ async def cycle_status():
     global current_status
     await bot.change_presence(activity=status_list[current_status])
     current_status = (current_status + 1) % len(status_list)
-
-bot = discord.Client(intents=intents)
-tree = app_commands.CommandTree(bot)  # így használd
 
 if __name__ == "__main__":
     bot.run(TOKEN)
